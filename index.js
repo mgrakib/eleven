@@ -37,7 +37,6 @@ const verifyJWT = (req, res, next) => {
 
 // const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.h9ydkmp.mongodb.net/?appName=Cluster0`;
 
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.h9ydkmp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 const client = new MongoClient(uri, {
@@ -51,11 +50,11 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    client.db("admin").command({ ping: 1 });
     console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
+      "Pinged your deployment. You successfully connected to MongoDB!",
     );
 
     const db = client.db("shajghorDB");
@@ -85,9 +84,8 @@ async function run() {
       res.send({ token });
     });
 
-    
     const verifyAdmin = async (req, res, next) => {
-      const email = req.decoded.email; 
+      const email = req.decoded.email;
       const query = { email: email };
       const user = await usersCollection.findOne(query);
 
@@ -99,11 +97,8 @@ async function run() {
       next();
     };
 
-
-
     /** --- 1. AUTHENTICATION & ROLE CHECK APIs --- **/
 
-    
     app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       if (email !== req.decoded.email)
@@ -133,8 +128,6 @@ async function run() {
       }
     });
 
-
-
     /** --- 2. USER & PROFILE MANAGEMENT --- **/
 
     // নতুন ইউজার তৈরি (Signup)
@@ -161,7 +154,6 @@ async function run() {
       res.send(result);
     });
 
-    
     app.get("/users/profile/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       if (email !== req.decoded.email)
@@ -210,7 +202,7 @@ async function run() {
     app.get("/services", async (req, res) => {
       const email = req.query.email;
       let query = {};
-      console.log('serv')
+      console.log("serv");
       if (email) {
         const user = await usersCollection.findOne({ email: email });
         query = user?.role === "admin" ? {} : { status: "active" };
@@ -228,8 +220,6 @@ async function run() {
       if (!result) return res.status(404).send({ message: "Not Found" });
       res.send(result);
     });
-
-   
 
     // নতুন সার্ভিস যোগ করা (Admin/Decorator)
     app.post("/services", verifyJWT, async (req, res) => {
@@ -254,8 +244,6 @@ async function run() {
       const result = await serviceCollection.insertOne(finalService);
       res.send(result);
     });
-
-    
 
     // সার্ভিস আপডেট (Admin Only)
     app.put("/services/:id", verifyJWT, verifyAdmin, async (req, res) => {
@@ -334,10 +322,10 @@ async function run() {
       async (req, res) => {
         const result = await bookingCollection.updateOne(
           { _id: new ObjectId(req.params.id) },
-          { $set: req.body }
+          { $set: req.body },
         );
         res.send(result);
-      }
+      },
     );
 
     // ডেকোরেটর লিস্ট দেখা (Admin Only)
@@ -350,7 +338,7 @@ async function run() {
           .find({ role: "decorator" })
           .toArray();
         res.send(result);
-      }
+      },
     );
 
     // ডেকোরেটরের নিজের অ্যাসাইন করা কাজ
@@ -368,7 +356,7 @@ async function run() {
     app.patch("/assigned-services/status/:id", verifyJWT, async (req, res) => {
       const result = await bookingCollection.updateOne(
         { _id: new ObjectId(req.params.id) },
-        { $set: { decoratorStatus: req.body.status } }
+        { $set: { decoratorStatus: req.body.status } },
       );
       res.send(result);
     });
@@ -420,7 +408,7 @@ async function run() {
     app.patch("/bookings/payment-success/:id", async (req, res) => {
       const result = await bookingCollection.updateOne(
         { _id: new ObjectId(req.params.id) },
-        { $set: { paymentStatus: "paid" } }
+        { $set: { paymentStatus: "paid" } },
       );
       res.send(result);
     });
@@ -451,7 +439,7 @@ async function run() {
       const tasks = await bookingCollection.find(query).toArray();
       const totalEarnings = tasks.reduce(
         (sum, task) => sum + parseFloat(task.price || 0),
-        0
+        0,
       );
       res.send({ totalEarnings, taskCount: tasks.length, history: tasks });
     });
@@ -463,7 +451,7 @@ async function run() {
         .toArray();
       const totalRevenue = bookings.reduce(
         (sum, item) => sum + parseFloat(item.price || 0),
-        0
+        0,
       );
       const demandData = {};
       bookings.forEach((item) => {
@@ -475,8 +463,6 @@ async function run() {
         .sort((a, b) => b.count - a.count);
       res.send({ totalRevenue, totalBookings: bookings.length, chartData });
     });
-
-
 
     ///////////// old/////////////
     // ২. সকল ইউজার দেখা (অ্যাডমিনের জন্য)
@@ -550,10 +536,6 @@ async function run() {
       const result = await serviceCollection.deleteOne(query);
       res.send(result);
     });
-
-   
-
-    
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
